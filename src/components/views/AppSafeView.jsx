@@ -1,0 +1,24 @@
+import { StatusBar, StyleSheet, View, ViewStyle } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { IS_Android } from "../../constants/constants";
+
+const AppSafeView = ({ children, style }) => {
+  return (
+    <SafeAreaView style={[styles.safeArea, style]}>
+      <View style={[styles.container]}>{children}</View>
+    </SafeAreaView>
+  );
+};
+
+export default AppSafeView;
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingTop: IS_Android ? StatusBar.currentHeight || 0 : 0,
+  },
+  container: {
+    flex: 1,
+  },
+});
