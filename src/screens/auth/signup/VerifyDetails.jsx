@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -15,14 +16,47 @@ import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AppSafeView from "../../../components/views/AppSafeView";
 import PrimaryHeader from "../../../components/headers/PrimaryHeader";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { REGISTERUSER } from "../../../services/AuthServices";
 
 const VerifyDetails = () => {
-  const [name, setName] = useState("");
-  const [enrollment, setEnrollment] = useState("");
-  const [branch, setBranch] = useState("");
-  const [batch, setBatch] = useState("");
+  const route = useRoute();
+  const eligibilityData = route?.params?.eligibilityData || {};
+  const initialName = eligibilityData?.name || "";
+  const initialEnrollment = eligibilityData?.rollNo || "";
+  const initialBranch = [eligibilityData?.department, eligibilityData?.branch]
+    .filter(Boolean)
+    .join(" / ");
+  const initialBatch = eligibilityData?.section || "";
+
+  const [name, setName] = useState(initialName);
+  const [enrollment, setEnrollment] = useState(initialEnrollment);
+  const [branch, setBranch] = useState(initialBranch);
+  const [batch, setBatch] = useState(initialBatch);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
   const navigation = useNavigation();
+  const email = route?.params?.email || eligibilityData?.email || "";
+
+  const handleVerifyAndContinue = async () => {
+    if (isSendingOtp) {
+      return;
+    }
+
+    if (!email) {
+      Alert.alert("Missing email", "Please restart signup from email step.");
+      return;
+    }
+
+    try {
+      setIsSendingOtp(true);
+      await REGISTERUSER({ fullName: name, email });
+      navigation.navigate("VerifyEmail", { email });
+    } catch (error) {
+      Alert.alert("Could not send OTP", error?.message || "Please try again.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
   return (
     <AppSafeView style={{ backgroundColor: "#F4F6F8" }}>
       <PrimaryHeader headerText="Verify Details" />
@@ -90,9 +124,11 @@ const VerifyDetails = () => {
 
             <TouchableOpacity
               style={styles.button}
-              onPress={() => navigation.navigate("VerifyEmail")}
+              onPress={handleVerifyAndContinue}
             >
-              <Text style={styles.buttonText}>Verify and Continue</Text>
+              <Text style={styles.buttonText}>
+                {isSendingOtp ? "Sending OTP..." : "Verify and Continue"}
+              </Text>
               <Feather name="chevron-right" size={20} color="white" />
             </TouchableOpacity>
           </ScrollView>

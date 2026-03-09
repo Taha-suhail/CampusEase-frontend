@@ -3,7 +3,7 @@ import React from "react";
 import AppSafeView from "../../../components/views/AppSafeView";
 import { s, vs } from "react-native-size-matters";
 
-const VerificationSuccess = () => {
+const VerificationSuccess = ({ onSignupComplete }) => {
   return (
     <AppSafeView>
       <View
@@ -43,7 +43,7 @@ const VerificationSuccess = () => {
           </Text>
         </View>
         {/* button */}
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={onSignupComplete}>
           <Text style={styles.buttonText}>Go to Dashboard</Text>
         </TouchableOpacity>
       </View>

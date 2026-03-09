@@ -1,59 +1,7 @@
-// import { Image, StyleSheet, Text, View } from "react-native";
-// import React, { useState } from "react";
-// import AppSafeView from "../../../components/views/AppSafeView";
-// import PrimaryHeader from "../../../components/headers/PrimaryHeader";
-// import OtpInput from "../../../components/inputs/OtpInput";
-// import { s, vs } from "react-native-size-matters";
-
-// const VerifyEmail = () => {
-//   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-//   return (
-//     <AppSafeView>
-//       <PrimaryHeader />
-//       <View>
-//         <View>
-//           <Image
-//             source={require("../../../assets/icons/Overlay.png")}
-//             resizeMode="contain"
-//             style={styles.img}
-//           />
-//         </View>
-
-//         <Text style={styles.verifyTxt}>Verify your email</Text>
-//         <View style={{ flexDirection: "row" }}>
-//           <Text
-//             style={{ fontSize: s(14), color: "#64748B", textAlign: "center" }}
-//           >
-//             We've sent a 6-digit code to your university email{" "}
-//           </Text>
-//           <Text>s**@uni.dev</Text>
-//         </View>
-//       </View>
-//     </AppSafeView>
-//   );
-// };
-
-// export default VerifyEmail;
-
-// const styles = StyleSheet.create({
-//   img: {
-//     width: 200,
-//     height: 150,
-//     alignItems: "center",
-//     justifyContent: "center",
-//     alignSelf: "center",
-//     marginTop: vs(16),
-//   },
-//   verifyTxt: {
-//     fontSize: s(24),
-//     textAlign: "center",
-//     fontWeight: "500",
-//     marginTop: vs(16),
-//   },
-// });
 
 import React, { useRef, useState } from "react";
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -64,20 +12,65 @@ import {
 import AppSafeView from "../../../components/views/AppSafeView";
 import { s, vs } from "react-native-size-matters";
 import PrimaryHeader from "../../../components/headers/PrimaryHeader";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { VERIFYOTP } from "../../../services/AuthServices";
 
 const VerifyEmail = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [isVerifying, setIsVerifying] = useState(false);
   const inputs = useRef([]);
+  const email = route?.params?.email || "";
+
+  const maskedEmail = (() => {
+    if (!email || !email.includes("@")) {
+      return "s***@uni.edu";
+    }
+
+    const [localPart, domain] = email.split("@");
+    if (!localPart) {
+      return `***@${domain || "uni.edu"}`;
+    }
+
+    return `${localPart[0]}***@${domain}`;
+  })();
 
   const handleChange = (text, index) => {
+    const digit = text.replace(/[^0-9]/g, "");
     const newOtp = [...otp];
-    newOtp[index] = text;
+    newOtp[index] = digit;
     setOtp(newOtp);
 
-    if (text && index < 5) {
+    if (digit && index < 5) {
       inputs.current[index + 1].focus();
+    }
+  };
+
+  const handleVerify = async () => {
+    if (isVerifying) {
+      return;
+    }
+
+    if (!email) {
+      Alert.alert("Missing email", "Please restart signup from email step.");
+      return;
+    }
+
+    const otpValue = otp.join("");
+    if (otpValue.length !== 6) {
+      Alert.alert("Invalid OTP", "Please enter the complete 6-digit OTP.");
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+      await VERIFYOTP({ email, otp: otpValue });
+      navigation.navigate("VerificationSuccess");
+    } catch (error) {
+      Alert.alert("OTP verification failed", error?.message || "Try again.");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -100,7 +93,7 @@ const VerifyEmail = () => {
         {/* Subtitle */}
         <Text style={styles.subtitle}>
           We've sent a 6-digit code to your{"\n"}university email{" "}
-          <Text style={styles.email}>s***@uni.edu</Text>
+          <Text style={styles.email}>{maskedEmail}</Text>
         </Text>
 
         {/* OTP Input */}
@@ -130,9 +123,11 @@ const VerifyEmail = () => {
         {/* Verify Button */}
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate("VerificationSuccess")}
+          onPress={handleVerify}
         >
-          <Text style={styles.buttonText}>Verify</Text>
+          <Text style={styles.buttonText}>
+            {isVerifying ? "Verifying..." : "Verify"}
+          </Text>
         </TouchableOpacity>
 
         {/* Resend */}

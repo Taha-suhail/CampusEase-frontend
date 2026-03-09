@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
-import React from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
 import AppSafeView from "../../../components/views/AppSafeView";
 import PrimaryHeader from "../../../components/headers/PrimaryHeader";
 import { s, vs } from "react-native-size-matters";
@@ -8,8 +8,41 @@ import InputWithIcon from "../../../components/inputs/InputWithIcon";
 import PrimaryBtn from "../../../components/buttons/PrimaryBtn";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useNavigation } from "@react-navigation/native";
+import { CHECKELIGIBILITY } from "../../../services/AuthServices";
 const EnterEmail = () => {
   const navigation = useNavigation();
+  const [email, setEmail] = useState("");
+  const [isChecking, setIsChecking] = useState(false);
+
+  const handleContinue = async () => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      Alert.alert("Email required", "Please enter your university email.");
+      return;
+    }
+
+    if (isChecking) {
+      return;
+    }
+
+    try {
+      setIsChecking(true);
+      const response = await CHECKELIGIBILITY(trimmedEmail);
+      navigation.navigate("VerifyDetails", {
+        email: trimmedEmail,
+        eligibilityData: response?.data || null,
+      });
+    } catch (error) {
+      Alert.alert(
+        "Eligibility check failed",
+        error?.message || "Please try again."
+      );
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
   return (
     <AppSafeView>
       <PrimaryHeader />
@@ -20,7 +53,7 @@ const EnterEmail = () => {
         <Text style={{ fontSize: s(18), color: "#000", fontWeight: "500" }}>
           University Email
         </Text>
-        <InputWithIcon />
+        <InputWithIcon value={email} onChangeText={setEmail} />
         <View style={{ flexDirection: "row", alignItems: "center", gap: s(6) }}>
           <AntDesign name="exclamation-circle" size={s(15)} color="black" />
           <Text>Please use your university email</Text>
@@ -36,8 +69,8 @@ const EnterEmail = () => {
         }}
       >
         <PrimaryBtn
-          btnText={"Continue to Campus Ease"}
-          onPress={() => navigation.navigate("VerifyDetails")}
+          btnText={isChecking ? "Checking..." : "Continue to Campus Ease"}
+          onPress={handleContinue}
         />
       </View>
     </AppSafeView>

@@ -5,17 +5,21 @@ import VerifyDetails from "../screens/auth/signup/VerifyDetails";
 import VerifyEmail from "../screens/auth/signup/VerifyEmail";
 import VerificationSuccess from "../screens/auth/signup/VerificationSuccess";
 const Stack = createStackNavigator();
-const AuthStack = () => {
+const AuthStack = ({ onSignupComplete }) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Welcome" component={Welcome} />
       <Stack.Screen name="EnterEmail" component={EnterEmail} />
       <Stack.Screen name="VerifyDetails" component={VerifyDetails} />
       <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
-      <Stack.Screen
-        name="VerificationSuccess"
-        component={VerificationSuccess}
-      />
+      <Stack.Screen name="VerificationSuccess">
+        {(props) => (
+          <VerificationSuccess
+            {...props}
+            onSignupComplete={onSignupComplete}
+          />
+        )}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 };
