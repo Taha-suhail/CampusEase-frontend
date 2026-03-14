@@ -4,6 +4,7 @@ import EnterEmail from "../screens/auth/signup/EnterEmail";
 import VerifyDetails from "../screens/auth/signup/VerifyDetails";
 import VerifyEmail from "../screens/auth/signup/VerifyEmail";
 import VerificationSuccess from "../screens/auth/signup/VerificationSuccess";
+import Login from "../screens/auth/signin/Login";
 const Stack = createStackNavigator();
 const AuthStack = ({ onSignupComplete }) => {
   return (
@@ -12,12 +13,10 @@ const AuthStack = ({ onSignupComplete }) => {
       <Stack.Screen name="EnterEmail" component={EnterEmail} />
       <Stack.Screen name="VerifyDetails" component={VerifyDetails} />
       <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
+      <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="VerificationSuccess">
         {(props) => (
-          <VerificationSuccess
-            {...props}
-            onSignupComplete={onSignupComplete}
-          />
+          <VerificationSuccess {...props} onSignupComplete={onSignupComplete} />
         )}
       </Stack.Screen>
     </Stack.Navigator>

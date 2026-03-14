@@ -32,6 +32,7 @@ const Welcome = () => {
             btnText={"Login in"}
             style={{ backgroundColor: "#136DEC" }}
             txtStyle={{ color: "#fff" }}
+            onPress={() => navigation.navigate("Login")}
           />
         </View>
       </View>
