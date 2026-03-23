@@ -13,7 +13,9 @@ const AuthStack = ({ onSignupComplete }) => {
       <Stack.Screen name="EnterEmail" component={EnterEmail} />
       <Stack.Screen name="VerifyDetails" component={VerifyDetails} />
       <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
-      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="Login">
+        {(props) => <Login {...props} onSignupComplete={onSignupComplete} />}
+      </Stack.Screen>
       <Stack.Screen name="VerificationSuccess">
         {(props) => (
           <VerificationSuccess {...props} onSignupComplete={onSignupComplete} />

@@ -7,14 +7,60 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Image,
+  Alert,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AppSafeView from "../../../components/views/AppSafeView";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const Login = () => {
+const Login = ({ onSignupComplete }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const navigation = useNavigation();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const BASE_URL =
+    process.env.EXPO_PUBLIC_API_BASE_URL || "https://campusease.up.railway.app";
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter email & password");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/api/v1/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // ✅ Save tokens
+        await AsyncStorage.setItem("accessToken", data.data.accessToken);
+        await AsyncStorage.setItem("refreshToken", data.data.refreshToken);
+
+        // ✅ Move to HomeStack
+        if (onSignupComplete) {
+          onSignupComplete();
+        }
+      } else {
+        Alert.alert("Login Failed", data.message || "Invalid credentials");
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Error", "Something went wrong");
+    }
+  };
   return (
     <AppSafeView style={styles.container}>
       {/* Logo Section */}
@@ -34,6 +80,8 @@ const Login = () => {
         placeholder="name@university.edu"
         placeholderTextColor="#9ca3af"
         keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
       />
 
       {/* Password */}
@@ -45,6 +93,8 @@ const Login = () => {
           placeholder="Enter your password"
           placeholderTextColor="#9ca3af"
           secureTextEntry={!passwordVisible}
+          value={password}
+          onChangeText={setPassword}
         />
 
         <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
@@ -62,7 +112,7 @@ const Login = () => {
       </TouchableOpacity>
 
       {/* Login Button */}
-      <TouchableOpacity style={styles.loginButton}>
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>
 
