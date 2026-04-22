@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   View,
@@ -11,152 +11,204 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import AppSafeView from "../../../components/views/AppSafeView";
-import PrimaryHeader from "../../../components/headers/PrimaryHeader";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+
+import PrimaryHeader from "../../../components/headers/PrimaryHeader";
 import { REGISTERUSER } from "../../../services/AuthServices";
 
 const VerifyDetails = () => {
   const route = useRoute();
-  const eligibilityData = route?.params?.eligibilityData || {};
-  const initialName = eligibilityData?.name || "";
-  const initialEnrollment = eligibilityData?.rollNo || "";
-  const initialBranch = [eligibilityData?.department, eligibilityData?.branch]
-    .filter(Boolean)
-    .join(" / ");
-  const initialBatch = eligibilityData?.section || "";
-
-  const [name, setName] = useState(initialName);
-  const [enrollment, setEnrollment] = useState(initialEnrollment);
-  const [branch, setBranch] = useState(initialBranch);
-  const [batch, setBatch] = useState(initialBatch);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
   const navigation = useNavigation();
-  const email = route?.params?.email || eligibilityData?.email || "";
+  const insets = useSafeAreaInsets();
 
-  const handleVerifyAndContinue = async () => {
-    if (isSendingOtp) {
-      return;
-    }
+  const { email, eligibilityData } = route?.params || {};
+  const data = eligibilityData?.data || eligibilityData || {};
 
-    if (!email) {
-      Alert.alert("Missing email", "Please restart signup from email step.");
+  const [name, setName] = useState("");
+  const [enrollment, setEnrollment] = useState("");
+  const [branch, setBranch] = useState("");
+  const [section, setSection] = useState("");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    setName(data?.name || "");
+    setEnrollment(data?.rollNo || "");
+    setBranch([data?.department, data?.branch].filter(Boolean).join(" / "));
+    setSection(data?.section || "");
+  }, []);
+
+  const userEmail = email || data?.email || "";
+
+  const handleContinue = async () => {
+    if (!userEmail) {
+      Alert.alert("Missing Email", "Please restart signup process.");
       return;
     }
 
     try {
-      setIsSendingOtp(true);
-      await REGISTERUSER({ fullName: name, email });
-      navigation.navigate("VerifyEmail", { email });
+      setSending(true);
+
+      await REGISTERUSER({
+        fullName: name,
+        email: userEmail,
+      });
+
+      navigation.navigate("VerifyEmail", {
+        email: userEmail,
+      });
     } catch (error) {
-      Alert.alert("Could not send OTP", error?.message || "Please try again.");
+      Alert.alert("Failed", error?.message || "Could not send OTP");
     } finally {
-      setIsSendingOtp(false);
+      setSending(false);
     }
   };
-  return (
-    <AppSafeView style={{ backgroundColor: "#F4F6F8" }}>
-      <PrimaryHeader headerText="Verify Details" />
 
+  return (
+    <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
-            contentContainerStyle={styles.content}
+            contentContainerStyle={styles.container}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.title}>Student Verification</Text>
+            {/* Top Card */}
+            <View style={styles.heroCard}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {name?.charAt(0)?.toUpperCase() || "S"}
+                </Text>
+              </View>
 
-            <Text style={styles.subtitle}>
-              Please ensure your academic details match your University ID. If
-              you find any discrepancies, contact the Registrar office.
-            </Text>
+              <Text style={styles.title}>Student Verification</Text>
 
-            <InputField
-              label="FULL NAME"
-              value={name}
-              onChangeText={setName}
-              verified
-            />
-
-            <InputField
-              label="ENROLLMENT NUMBER"
-              value={enrollment}
-              onChangeText={setEnrollment}
-              verified
-            />
-
-            <InputField
-              label="DEPARTMENT / BRANCH"
-              value={branch}
-              onChangeText={setBranch}
-              verified
-            />
-
-            <InputField
-              label="ACADEMIC BATCH"
-              value={batch}
-              onChangeText={setBatch}
-            />
-
-            {/* Info Box */}
-
-            <View style={styles.infoBox}>
-              <Ionicons
-                name="information-circle-outline"
-                size={22}
-                color="#2C6ED5"
-              />
-
-              <Text style={styles.infoText}>
-                Information is fetched directly from the university database.
-                Read-only access ensures data integrity during the onboarding
-                phase.
+              <Text style={styles.subtitle}>
+                We found your academic details in the university database.
+                Please review and continue securely.
               </Text>
+
+              <View style={styles.progressRow}>
+                <View style={[styles.progressDot, styles.activeDot]} />
+                <View style={[styles.progressDot, styles.activeDot]} />
+                <View style={styles.progressDot} />
+              </View>
+
+              <Text style={styles.stepText}>Step 2 of 3</Text>
             </View>
 
-            {/* Button */}
+            {/* Form Card */}
+            <View style={styles.formCard}>
+              <InputField
+                label="FULL NAME"
+                value={name}
+                onChangeText={setName}
+                icon="user"
+                verified
+              />
 
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleVerifyAndContinue}
-            >
-              <Text style={styles.buttonText}>
-                {isSendingOtp ? "Sending OTP..." : "Verify and Continue"}
-              </Text>
-              <Feather name="chevron-right" size={20} color="white" />
-            </TouchableOpacity>
+              <InputField
+                label="ENROLLMENT NUMBER"
+                value={enrollment}
+                onChangeText={setEnrollment}
+                icon="hash"
+                verified
+              />
+
+              <InputField
+                label="DEPARTMENT / BRANCH"
+                value={branch}
+                onChangeText={setBranch}
+                icon="book-open"
+                verified
+              />
+
+              <InputField
+                label="SECTION"
+                value={section}
+                onChangeText={setSection}
+                icon="layers"
+                verified
+              />
+
+              {/* Info */}
+              <View style={styles.infoBox}>
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={20}
+                  color="#2563EB"
+                />
+
+                <Text style={styles.infoText}>
+                  Verified data is synced directly from university records to
+                  ensure identity accuracy.
+                </Text>
+              </View>
+
+              {/* CTA */}
+              <TouchableOpacity
+                style={[styles.button, sending && styles.disabledBtn]}
+                onPress={handleContinue}
+                disabled={sending}
+              >
+                {sending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Text style={styles.buttonText}>Verify & Continue</Text>
+
+                    <Feather name="arrow-right" size={18} color="#fff" />
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
-    </AppSafeView>
+    </SafeAreaView>
   );
 };
 
 export default VerifyDetails;
 
-const InputField = ({ label, value, onChangeText, verified }) => {
+/* -------------------------------- */
+/* Input Field */
+/* -------------------------------- */
+
+const InputField = ({ label, value, onChangeText, verified, icon }) => {
   return (
-    <View style={{ marginTop: 22 }}>
+    <View style={styles.inputWrap}>
       <Text style={styles.label}>{label}</Text>
 
       <View style={styles.inputBox}>
+        <Feather
+          name={icon}
+          size={18}
+          color="#64748B"
+          style={{ marginRight: 10 }}
+        />
+
         <TextInput
           value={value}
           onChangeText={onChangeText}
           style={styles.input}
           placeholder="Enter here"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#94A3B8"
         />
 
         {verified && (
-          <View style={styles.verifiedIcon}>
-            <Feather name="check" size={14} color="white" />
+          <View style={styles.verifiedBadge}>
+            <Feather name="check" size={12} color="#fff" />
           </View>
         )}
       </View>
@@ -164,89 +216,166 @@ const InputField = ({ label, value, onChangeText, verified }) => {
   );
 };
 
+/* -------------------------------- */
+/* Styles */
+/* -------------------------------- */
+
 const styles = StyleSheet.create({
-  content: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
+
+  container: {
     paddingHorizontal: 20,
-    paddingTop: 24,
     paddingBottom: 40,
   },
 
+  heroCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 24,
+    marginTop: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#2563EB",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  avatarText: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "800",
+  },
+
   title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#111827",
+    marginTop: 16,
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#0F172A",
   },
 
   subtitle: {
-    fontSize: 15,
-    color: "#6B7280",
     marginTop: 10,
+    textAlign: "center",
+    fontSize: 14,
     lineHeight: 22,
+    color: "#64748B",
+  },
+
+  progressRow: {
+    flexDirection: "row",
+    marginTop: 18,
+  },
+
+  progressDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#CBD5E1",
+    marginHorizontal: 5,
+  },
+
+  activeDot: {
+    backgroundColor: "#2563EB",
+  },
+
+  stepText: {
+    marginTop: 8,
+    color: "#64748B",
+    fontWeight: "600",
+  },
+
+  formCard: {
+    marginTop: 18,
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  inputWrap: {
+    marginBottom: 18,
   },
 
   label: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "700",
     letterSpacing: 1,
+    color: "#64748B",
+    marginBottom: 8,
   },
 
   inputBox: {
-    marginTop: 8,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 16,
+    paddingHorizontal: 14,
   },
 
   input: {
     flex: 1,
-    fontSize: 17,
-    color: "#111827",
-    paddingVertical: 12,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#0F172A",
   },
 
-  verifiedIcon: {
-    backgroundColor: "#2C6ED5",
+  verifiedBadge: {
     width: 24,
     height: 24,
     borderRadius: 12,
+    backgroundColor: "#16A34A",
     justifyContent: "center",
     alignItems: "center",
   },
 
   infoBox: {
-    marginTop: 26,
+    marginTop: 6,
     flexDirection: "row",
-    backgroundColor: "#E8F0FE",
-    padding: 16,
-    borderRadius: 14,
+    backgroundColor: "#EFF6FF",
+    padding: 14,
+    borderRadius: 16,
+    alignItems: "flex-start",
   },
 
   infoText: {
     flex: 1,
-    fontSize: 14,
-    color: "#2C6ED5",
     marginLeft: 10,
+    fontSize: 13,
     lineHeight: 20,
+    color: "#1D4ED8",
   },
 
   button: {
-    marginTop: 40,
-    backgroundColor: "#2C6ED5",
+    marginTop: 24,
+    backgroundColor: "#2563EB",
     borderRadius: 18,
-    paddingVertical: 18,
-    flexDirection: "row",
-    alignItems: "center",
+    paddingVertical: 16,
     justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+
+  disabledBtn: {
+    opacity: 0.7,
   },
 
   buttonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
-    marginRight: 6,
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginRight: 8,
   },
 });

@@ -5,306 +5,342 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
-  Image,
   Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import AppSafeView from "../../../components/views/AppSafeView";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { s, vs, ms } from "react-native-size-matters";
+
+import { LOGIN } from "../../../services/AuthServices";
 
 const Login = ({ onSignupComplete }) => {
-  const [passwordVisible, setPasswordVisible] = useState(false);
   const navigation = useNavigation();
 
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
 
-  const BASE_URL =
-    process.env.EXPO_PUBLIC_API_BASE_URL || "https://campusease.up.railway.app";
+  const [passwordVisible, setPasswordVisible] = useState(false);
+
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please enter email & password");
+      Alert.alert("Missing Fields", "Please enter email and password.");
       return;
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/api/v1/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      setLoading(true);
+
+      const res = await LOGIN({
+        email,
+        password,
       });
 
-      const data = await response.json();
+      if (res.success) {
+        const { accessToken, refreshToken, user } = res.data;
 
-      if (data.success) {
-        // ✅ Save tokens
-        await AsyncStorage.setItem("accessToken", data.data.accessToken);
-        await AsyncStorage.setItem("refreshToken", data.data.refreshToken);
+        await AsyncStorage.setItem("accessToken", accessToken);
 
-        // ✅ Move to HomeStack
-        if (onSignupComplete) {
-          onSignupComplete();
-        }
+        await AsyncStorage.setItem("refreshToken", refreshToken);
+
+        await AsyncStorage.setItem("userRole", user.role);
+
+        await AsyncStorage.setItem("campusease:isSignedUp", "true");
+
+        onSignupComplete?.();
       } else {
-        Alert.alert("Login Failed", data.message || "Invalid credentials");
+        Alert.alert("Login Failed", res.message || "Invalid credentials");
       }
     } catch (error) {
-      console.log(error);
-      Alert.alert("Error", "Something went wrong");
+      Alert.alert("Error", error.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
-    <AppSafeView style={styles.container}>
-      {/* Logo Section */}
-      <View style={styles.logoContainer}>
-        {/* Replace this with your logo */}
-        <View style={styles.logoPlaceholder} />
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={{
+          flex: 1,
+        }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.container}
+        >
+          {/* Hero */}
+          <View style={styles.heroCard}>
+            <View style={styles.logoCircle}>
+              <Ionicons name="school" size={40} color="#fff" />
+            </View>
 
-        <Text style={styles.title}>Campus Ease</Text>
-        <Text style={styles.subtitle}>Your University, Simplified.</Text>
-      </View>
+            <Text style={styles.brand}>CampusEase</Text>
 
-      {/* Email */}
-      <Text style={styles.label}>University Email</Text>
+            <Text style={styles.tagline}>
+              Secure login to your student portal
+            </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="name@university.edu"
-        placeholderTextColor="#9ca3af"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
+            <View style={styles.dotRow}>
+              <View style={[styles.dot, styles.activeDot]} />
+              <View style={[styles.dot, styles.activeDot]} />
+              <View style={[styles.dot, styles.activeDot]} />
+            </View>
+          </View>
 
-      {/* Password */}
-      <Text style={styles.label}>Password</Text>
+          {/* Form */}
+          <View style={styles.formCard}>
+            <Text style={styles.heading}>Welcome Back</Text>
 
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.passwordInput}
-          placeholder="Enter your password"
-          placeholderTextColor="#9ca3af"
-          secureTextEntry={!passwordVisible}
-          value={password}
-          onChangeText={setPassword}
-        />
+            <Text style={styles.subHeading}>
+              Login to continue your academic journey.
+            </Text>
 
-        <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
-          <Ionicons
-            name={passwordVisible ? "eye-off-outline" : "eye-outline"}
-            size={22}
-            color="#9ca3af"
-          />
-        </TouchableOpacity>
-      </View>
+            {/* Email */}
+            <Text style={styles.label}>University Email</Text>
 
-      {/* Forgot Password */}
-      <TouchableOpacity>
-        <Text style={styles.forgot}>Forgot Password?</Text>
-      </TouchableOpacity>
+            <View style={styles.inputWrap}>
+              <Ionicons name="mail-outline" size={18} color="#64748B" />
 
-      {/* Login Button */}
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginText}>Login</Text>
-      </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                placeholder="name@university.edu"
+                placeholderTextColor="#94A3B8"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
 
-      {/* Divider */}
-      <View style={styles.dividerRow}>
-        <View style={styles.line} />
-        <Text style={styles.orText}>Or continue with</Text>
-        <View style={styles.line} />
-      </View>
+            {/* Password */}
+            <Text style={styles.label}>Password</Text>
 
-      {/* Social Login */}
-      <View style={styles.socialRow}>
-        <TouchableOpacity style={styles.socialButton}>
-          <Image
-            source={{
-              uri: "https://cdn-icons-png.flaticon.com/512/300/300221.png",
-            }}
-            style={styles.socialIcon}
-          />
-          <Text style={styles.socialText}>Google</Text>
-        </TouchableOpacity>
+            <View style={styles.inputWrap}>
+              <Ionicons name="lock-closed-outline" size={18} color="#64748B" />
 
-        <TouchableOpacity style={styles.socialButton}>
-          <Image
-            source={{
-              uri: "https://cdn-icons-png.flaticon.com/512/732/732221.png",
-            }}
-            style={styles.socialIcon}
-          />
-          <Text style={styles.socialText}>Microsoft</Text>
-        </TouchableOpacity>
-      </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter password"
+                placeholderTextColor="#94A3B8"
+                secureTextEntry={!passwordVisible}
+                value={password}
+                onChangeText={setPassword}
+              />
 
-      <View style={styles.signupRow}>
-        <Text style={styles.signupText}>New here?</Text>
+              <TouchableOpacity
+                onPress={() => setPasswordVisible(!passwordVisible)}
+              >
+                <Ionicons
+                  name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="#64748B"
+                />
+              </TouchableOpacity>
+            </View>
 
-        <TouchableOpacity onPress={() => navigation.navigate("EnterEmail")}>
-          <Text style={styles.signupLink}>Create an account</Text>
-        </TouchableOpacity>
-      </View>
-    </AppSafeView>
+            <TouchableOpacity>
+              <Text style={styles.forgot}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            {/* Button */}
+            <TouchableOpacity
+              style={[styles.loginBtn, loading && styles.disabledBtn]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.loginText}>Login</Text>
+
+                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>New here?</Text>
+
+              <TouchableOpacity
+                onPress={() => navigation.navigate("EnterEmail")}
+              >
+                <Text style={styles.footerLink}>Create an account</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 export default Login;
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 25,
+    backgroundColor: "#F8FAFC",
   },
 
-  logoContainer: {
+  container: {
+    paddingHorizontal: s(20),
+    paddingBottom: vs(30),
+  },
+
+  heroCard: {
+    marginTop: vs(12),
+    backgroundColor: "#fff",
+    borderRadius: s(24),
+    padding: s(24),
     alignItems: "center",
-    marginTop: 40,
-    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
 
-  logoPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#e5e7eb",
-    marginBottom: 10,
+  logoCircle: {
+    width: s(84),
+    height: s(84),
+    borderRadius: s(42),
+    backgroundColor: "#2563EB",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111827",
+  brand: {
+    marginTop: vs(16),
+    fontSize: ms(28),
+    fontWeight: "900",
+    color: "#0F172A",
   },
 
-  subtitle: {
-    fontSize: 16,
-    color: "#6b7280",
-    marginTop: 4,
+  tagline: {
+    marginTop: vs(8),
+    fontSize: ms(14),
+    color: "#64748B",
+    textAlign: "center",
+  },
+
+  dotRow: {
+    flexDirection: "row",
+    marginTop: vs(18),
+  },
+
+  dot: {
+    width: s(10),
+    height: s(10),
+    borderRadius: s(5),
+    backgroundColor: "#CBD5E1",
+    marginHorizontal: s(5),
+  },
+
+  activeDot: {
+    backgroundColor: "#2563EB",
+  },
+
+  formCard: {
+    marginTop: vs(18),
+    backgroundColor: "#fff",
+    borderRadius: s(24),
+    padding: s(22),
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  heading: {
+    fontSize: ms(24),
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+
+  subHeading: {
+    marginTop: vs(6),
+    fontSize: ms(14),
+    color: "#64748B",
+    marginBottom: vs(22),
   },
 
   label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    color: "#374151",
+    fontSize: ms(13),
+    fontWeight: "700",
+    color: "#475569",
+    marginBottom: vs(8),
+    marginTop: vs(8),
+  },
+
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: s(16),
+    paddingHorizontal: s(14),
   },
 
   input: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 30,
-    height: 55,
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    fontSize: 16,
-  },
-
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 30,
-    height: 55,
-    paddingHorizontal: 20,
-    justifyContent: "space-between",
-  },
-
-  passwordInput: {
     flex: 1,
-    fontSize: 16,
+    paddingVertical: vs(14),
+    marginLeft: s(10),
+    fontSize: ms(15),
+    color: "#0F172A",
   },
 
   forgot: {
-    color: "#2563eb",
-    alignSelf: "flex-end",
-    marginTop: 10,
-    marginBottom: 25,
-    fontWeight: "500",
+    textAlign: "right",
+    marginTop: vs(12),
+    color: "#2563EB",
+    fontWeight: "700",
+    fontSize: ms(13),
   },
 
-  loginButton: {
-    backgroundColor: "#2563eb",
-    height: 60,
-    borderRadius: 35,
+  loginBtn: {
+    marginTop: vs(24),
+    backgroundColor: "#2563EB",
+    borderRadius: s(18),
+    paddingVertical: vs(16),
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#2563eb",
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 6,
+    flexDirection: "row",
+  },
+
+  disabledBtn: {
+    opacity: 0.7,
   },
 
   loginText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
+    color: "#fff",
+    fontSize: ms(16),
+    fontWeight: "800",
+    marginRight: s(8),
   },
 
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 30,
-  },
-
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#d1d5db",
-  },
-
-  orText: {
-    marginHorizontal: 10,
-    color: "#6b7280",
-  },
-
-  socialRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  socialButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f3f4f6",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 25,
-  },
-
-  socialIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
-  },
-
-  socialText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-
-  signup: {
-    textAlign: "center",
-    marginTop: 35,
-    color: "#6b7280",
-  },
-
-  signupLink: {
-    color: "#2563eb",
-    fontWeight: "600",
-  },
-  signupRow: {
+  footer: {
     flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
-    marginTop: 35,
+    marginTop: vs(22),
+  },
+
+  footerText: {
+    color: "#64748B",
+    fontSize: ms(14),
+  },
+
+  footerLink: {
+    color: "#2563EB",
+    fontSize: ms(14),
+    fontWeight: "800",
+    marginLeft: s(6),
   },
 });

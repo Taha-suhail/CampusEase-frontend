@@ -31,6 +31,9 @@
         "projectId": "f9bb567a-2a09-4326-90d9-bf465d17455a"
       }
     },
-    "owner": "tahaexpo"
+    "owner": "tahaexpo",
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

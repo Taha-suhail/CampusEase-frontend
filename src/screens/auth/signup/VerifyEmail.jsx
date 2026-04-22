@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from "react";
 import {
   Alert,
@@ -8,242 +7,374 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
-import AppSafeView from "../../../components/views/AppSafeView";
-import { s, vs } from "react-native-size-matters";
-import PrimaryHeader from "../../../components/headers/PrimaryHeader";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { s, vs, ms } from "react-native-size-matters";
+import Feather from "@expo/vector-icons/Feather";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+
+import PrimaryHeader from "../../../components/headers/PrimaryHeader";
 import { VERIFYOTP } from "../../../services/AuthServices";
 
 const VerifyEmail = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const inputs = useRef([]);
+  const insets = useSafeAreaInsets();
+
   const email = route?.params?.email || "";
+
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const inputs = useRef([]);
 
   const maskedEmail = (() => {
     if (!email || !email.includes("@")) {
-      return "s***@uni.edu";
+      return "s***@university.edu";
     }
 
-    const [localPart, domain] = email.split("@");
-    if (!localPart) {
-      return `***@${domain || "uni.edu"}`;
-    }
+    const [local, domain] = email.split("@");
 
-    return `${localPart[0]}***@${domain}`;
+    return `${local[0]}***@${domain}`;
   })();
 
+  // OTP Change
   const handleChange = (text, index) => {
-    const digit = text.replace(/[^0-9]/g, "");
+    const value = text.replace(/[^0-9]/g, "");
+
     const newOtp = [...otp];
-    newOtp[index] = digit;
+    newOtp[index] = value;
+
     setOtp(newOtp);
 
-    if (digit && index < 5) {
-      inputs.current[index + 1].focus();
+    if (value && index < 5) {
+      inputs.current[index + 1]?.focus();
     }
   };
 
+  // Verify
   const handleVerify = async () => {
-    if (isVerifying) {
-      return;
-    }
-
-    if (!email) {
-      Alert.alert("Missing email", "Please restart signup from email step.");
-      return;
-    }
+    if (isVerifying) return;
 
     const otpValue = otp.join("");
+
     if (otpValue.length !== 6) {
-      Alert.alert("Invalid OTP", "Please enter the complete 6-digit OTP.");
+      Alert.alert("Invalid OTP", "Enter complete 6-digit code");
       return;
     }
 
     try {
       setIsVerifying(true);
-      await VERIFYOTP({ email, otp: otpValue });
+
+      await VERIFYOTP({
+        email,
+        otp: otpValue,
+      });
+
       navigation.navigate("VerificationSuccess");
     } catch (error) {
-      Alert.alert("OTP verification failed", error?.message || "Try again.");
+      Alert.alert("Verification Failed", error?.message || "Please try again.");
     } finally {
       setIsVerifying(false);
     }
   };
 
   return (
-    <AppSafeView>
-      <View style={styles.container}>
-        <PrimaryHeader />
+    <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
 
-        {/* Logo Section */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("../../../assets/icons/Overlay.png")} // replace with your image
-            style={styles.img}
-          />
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>Verify your email</Text>
-
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>
-          We've sent a 6-digit code to your{"\n"}university email{" "}
-          <Text style={styles.email}>{maskedEmail}</Text>
-        </Text>
-
-        {/* OTP Input */}
-        <View style={styles.otpRow}>
-          {otp.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => (inputs.current[index] = ref)}
-              style={styles.otpInput}
-              value={digit}
-              keyboardType="number-pad"
-              maxLength={1}
-              onChangeText={(text) => handleChange(text, index)}
-              onKeyPress={({ nativeEvent }) => {
-                if (
-                  nativeEvent.key === "Backspace" &&
-                  !otp[index] &&
-                  index > 0
-                ) {
-                  inputs.current[index - 1].focus();
-                }
-              }}
-            />
-          ))}
-        </View>
-
-        {/* Verify Button */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleVerify}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.buttonText}>
-            {isVerifying ? "Verifying..." : "Verify"}
-          </Text>
-        </TouchableOpacity>
+          {/* Hero Card */}
+          <View style={styles.heroCard}>
+            <View style={styles.logoCircle}>
+              <Image
+                source={require("../../../assets/icons/Overlay.png")}
+                style={styles.logo}
+              />
+            </View>
 
-        {/* Resend */}
-        <Text style={styles.resend}>
-          Didn't receive the code?{" "}
-          <Text style={styles.resendLink}>Resend Code</Text>
-        </Text>
-      </View>
-    </AppSafeView>
+            <Text style={styles.title}>Verify Your Email</Text>
+
+            <Text style={styles.subtitle}>
+              We’ve sent a secure 6-digit verification code to your registered
+              university email.
+            </Text>
+
+            <View style={styles.emailBadge}>
+              <Ionicons name="mail-outline" size={16} color="#2563EB" />
+              <Text style={styles.emailText}>{maskedEmail}</Text>
+            </View>
+
+            {/* Progress */}
+            <View style={styles.progressRow}>
+              <View style={[styles.dot, styles.activeDot]} />
+              <View style={[styles.dot, styles.activeDot]} />
+              <View style={[styles.dot, styles.activeDot]} />
+            </View>
+
+            <Text style={styles.step}>Step 3 of 3</Text>
+          </View>
+
+          {/* OTP Card */}
+          <View style={styles.formCard}>
+            <Text style={styles.otpLabel}>Enter OTP Code</Text>
+
+            <View style={styles.otpRow}>
+              {otp.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => (inputs.current[index] = ref)}
+                  style={styles.otpInput}
+                  value={digit}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  onChangeText={(text) => handleChange(text, index)}
+                  onKeyPress={({ nativeEvent }) => {
+                    if (
+                      nativeEvent.key === "Backspace" &&
+                      !otp[index] &&
+                      index > 0
+                    ) {
+                      inputs.current[index - 1]?.focus();
+                    }
+                  }}
+                />
+              ))}
+            </View>
+
+            {/* Security Note */}
+            <View style={styles.infoBox}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={18}
+                color="#2563EB"
+              />
+              <Text style={styles.infoText}>
+                Your OTP expires in 5 minutes for security.
+              </Text>
+            </View>
+
+            {/* Verify Button */}
+            <TouchableOpacity
+              style={[styles.button, isVerifying && styles.disabledBtn]}
+              onPress={handleVerify}
+              disabled={isVerifying}
+            >
+              {isVerifying ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Verify & Continue</Text>
+
+                  <Feather name="arrow-right" size={18} color="#fff" />
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Resend */}
+            <TouchableOpacity>
+              <Text style={styles.resend}>
+                Didn’t receive the code?{" "}
+                <Text style={styles.resendLink}>Resend Code</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 export default VerifyEmail;
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+  },
+
+  container: {
     paddingHorizontal: s(20),
+    paddingBottom: vs(40),
   },
 
-  back: {
-    alignSelf: "flex-start",
-    fontSize: 28,
-    marginTop: 10,
-  },
-
-  //   logoContainer: {
-  //     width: 220,
-  //     height: 220,
-  //     borderRadius: 120,
-  //     backgroundColor: "#cfe5e2",
-  //     justifyContent: "center",
-  //     alignItems: "center",
-  //     marginTop: 30,
-  //   },
-
-  //   logo: {
-  //     width: 80,
-  //     height: 80,
-  //     resizeMode: "contain",
-  //   },
-  img: {
-    width: 200,
-    height: 150,
+  heroCard: {
+    marginTop: vs(10),
+    backgroundColor: "#fff",
+    borderRadius: s(24),
+    padding: s(24),
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  logoCircle: {
+    width: s(90),
+    height: s(90),
+    borderRadius: s(45),
+    backgroundColor: "#EFF6FF",
     justifyContent: "center",
-    alignSelf: "center",
-    marginTop: vs(16),
+    alignItems: "center",
+  },
+
+  logo: {
+    width: s(62),
+    height: s(62),
     resizeMode: "contain",
   },
+
   title: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginTop: 30,
-    color: "#1f2937",
+    marginTop: vs(16),
+    fontSize: ms(24),
+    fontWeight: "800",
+    color: "#0F172A",
   },
 
   subtitle: {
+    marginTop: vs(10),
     textAlign: "center",
-    color: "#6b7280",
-    fontSize: 15,
-    marginTop: 10,
-    lineHeight: 22,
+    fontSize: ms(14),
+    color: "#64748B",
+    lineHeight: vs(22),
   },
 
-  email: {
-    color: "#1abc9c",
-    fontWeight: "600",
+  emailBadge: {
+    marginTop: vs(16),
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: s(14),
+    paddingVertical: vs(10),
+    borderRadius: s(16),
+  },
+
+  emailText: {
+    marginLeft: s(8),
+    color: "#1D4ED8",
+    fontWeight: "700",
+    fontSize: ms(13),
+  },
+
+  progressRow: {
+    flexDirection: "row",
+    marginTop: vs(18),
+  },
+
+  dot: {
+    width: s(10),
+    height: s(10),
+    borderRadius: s(5),
+    backgroundColor: "#CBD5E1",
+    marginHorizontal: s(5),
+  },
+
+  activeDot: {
+    backgroundColor: "#2563EB",
+  },
+
+  step: {
+    marginTop: vs(8),
+    color: "#64748B",
+    fontWeight: "700",
+  },
+
+  formCard: {
+    marginTop: vs(18),
+    backgroundColor: "#fff",
+    borderRadius: s(24),
+    padding: s(22),
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  otpLabel: {
+    fontSize: ms(14),
+    fontWeight: "700",
+    color: "#475569",
+    marginBottom: vs(14),
+    textAlign: "center",
   },
 
   otpRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 30,
-    width: "100%",
   },
 
   otpInput: {
-    width: 48,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#e5e7eb",
+    width: s(48),
+    height: vs(56),
+    borderRadius: s(16),
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
     textAlign: "center",
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: ms(22),
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+
+  infoBox: {
+    marginTop: vs(18),
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    padding: s(14),
+    borderRadius: s(16),
+  },
+
+  infoText: {
+    marginLeft: s(8),
+    color: "#1D4ED8",
+    fontSize: ms(13),
+    flex: 1,
   },
 
   button: {
-    width: "100%",
-    height: 56,
-    backgroundColor: "#22c1a1",
-    borderRadius: 30,
+    marginTop: vs(24),
+    backgroundColor: "#2563EB",
+    borderRadius: s(18),
+    paddingVertical: vs(16),
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 40,
-    shadowColor: "#22c1a1",
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 5,
+    flexDirection: "row",
+  },
+
+  disabledBtn: {
+    opacity: 0.7,
   },
 
   buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+    color: "#fff",
+    fontSize: ms(16),
+    fontWeight: "700",
+    marginRight: s(8),
   },
 
   resend: {
-    marginTop: 20,
-    color: "#6b7280",
+    marginTop: vs(18),
+    textAlign: "center",
+    color: "#64748B",
+    fontSize: ms(14),
   },
 
   resendLink: {
-    color: "#22c1a1",
-    fontWeight: "600",
+    color: "#2563EB",
+    fontWeight: "700",
   },
 });

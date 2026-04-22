@@ -1,10 +1,14 @@
 import { StatusBar, StyleSheet, View, ViewStyle } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { IS_Android } from "../../constants/constants";
 
 const AppSafeView = ({ children, style }) => {
+  const insets = useSafeAreaInsets();
   return (
-    <SafeAreaView style={[styles.safeArea, style]}>
+    <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }, style]}>
       <View style={[styles.container]}>{children}</View>
     </SafeAreaView>
   );

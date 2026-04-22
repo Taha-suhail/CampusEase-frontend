@@ -1,16 +1,16 @@
-const BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || "https://campusease.up.railway.app";
+import { BASE_URL } from "../config/baseUrl";
 
-const parseResponse = async (response, fallbackMessage) => {
-  let data = null;
+export const parseResponse = async (response, defaultMessage) => {
+  let data;
+
   try {
-    data = await response.json();
-  } catch (error) {
-    data = null;
+    data = await response.json(); // ✅ ONLY ONCE
+  } catch (err) {
+    throw new Error("Failed to parse server response");
   }
 
   if (!response.ok) {
-    throw new Error(data?.message || fallbackMessage);
+    throw new Error(data?.message || defaultMessage);
   }
 
   return data;
@@ -78,8 +78,60 @@ export const VERIFYOTP = async ({ email, otp }) => {
   return parseResponse(response, "Unable to verify OTP.");
 };
 
+export const LOGIN = async ({ email, password }) => {
+  if (!email?.trim()) {
+    throw new Error("Email is required.");
+  }
+
+  if (!password?.trim()) {
+    throw new Error("Password is required.");
+  }
+
+  const response = await fetch(`${BASE_URL}/api/v1/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: email.trim(),
+      password: password.trim(),
+    }),
+  });
+
+  return await parseResponse(response, "Unable to login.");
+};
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+export const GET_USER = async () => {
+  const token = await AsyncStorage.getItem("accessToken");
+  if (!token) throw new Error("Access token is required");
+  const response = await fetch(`${BASE_URL}/api/v1/auth/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await parseResponse(response, "Unable to get user.");
+};
+
+export const LOGOUT = async () => {
+  try {
+    await AsyncStorage.removeItem("accessToken");
+    await AsyncStorage.removeItem("refreshToken");
+    await AsyncStorage.removeItem("campusease:isSignedUp");
+    await AsyncStorage.removeItem("userRole");
+  } catch (error) {
+    console.error("Error during logout:", error);
+  }
+};
+
 export default {
   CHECKELIGIBILITY,
   REGISTERUSER,
   VERIFYOTP,
+  LOGIN,
+  GET_USER,
+  LOGOUT,
 };

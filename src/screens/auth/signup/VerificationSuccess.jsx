@@ -1,74 +1,160 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import React from "react";
-import AppSafeView from "../../../components/views/AppSafeView";
-import { s, vs } from "react-native-size-matters";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View, Text, TouchableOpacity, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { s, vs, ms } from "react-native-size-matters";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
-const VerificationSuccess = ({ onSignupComplete }) => {
+const VerificationSuccess = () => {
+  const navigation = useNavigation();
+  const [count, setCount] = useState(3);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((prev) => prev - 1);
+    }, 1000);
+
+    const timer = setTimeout(() => {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const goNow = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }],
+    });
+  };
+
   return (
-    <AppSafeView>
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          marginHorizontal: s(16),
-          marginTop: vs(50),
-          gap: s(20),
-          //   justifyContent: "center",
-        }}
-      >
-        <View>
-          <Image
-            source={require("../../../assets/icons/Soft Outer Circle.png")}
-            resizeMode="contain"
-            style={styles.img}
-          />
-        </View>
-        {/* texts */}
-        <View>
-          <Text
-            style={{ fontSize: s(24), fontWeight: "500", textAlign: "center" }}
-          >
-            Verification Successful!
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.card}>
+          {/* Image */}
+          <View style={styles.imageWrap}>
+            <Image
+              source={require("../../../assets/icons/Soft Outer Circle.png")}
+              resizeMode="contain"
+              style={styles.img}
+            />
+
+            <View style={styles.checkCircle}>
+              <Ionicons name="checkmark" size={34} color="#fff" />
+            </View>
+          </View>
+
+          <Text style={styles.title}>Verification Successful!</Text>
+
+          <Text style={styles.subtitle}>
+            Your account has been verified successfully.
           </Text>
-          <Text
-            style={{
-              color: "#64748B",
-              fontSize: s(16),
-              textAlign: "center",
-              marginTop: vs(16),
-            }}
-          >
-            Your account is now verified. You are ready to explore your campus
-            life.
+
+          <Text style={styles.redirectText}>
+            Redirecting to Login in {count}s...
           </Text>
         </View>
-        {/* button */}
-        <TouchableOpacity style={styles.button} onPress={onSignupComplete}>
-          <Text style={styles.buttonText}>Go to Dashboard</Text>
+
+        {/* Manual Button */}
+        <TouchableOpacity style={styles.button} onPress={goNow}>
+          <Text style={styles.buttonText}>Go to Login Now</Text>
+
+          <Ionicons name="arrow-forward" size={18} color="#fff" />
         </TouchableOpacity>
       </View>
-    </AppSafeView>
+    </SafeAreaView>
   );
 };
 
 export default VerificationSuccess;
 
 const styles = StyleSheet.create({
-  img: {
-    width: 200,
-    height: 200,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
   },
-  buttonText: {
-    fontSize: s(16),
-    fontWeight: "500",
+
+  container: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingHorizontal: s(20),
+    paddingVertical: vs(30),
   },
-  button: {
-    backgroundColor: "#30E8C9",
-    width: "100%",
+
+  card: {
+    marginTop: vs(40),
+    backgroundColor: "#fff",
+    borderRadius: s(26),
+    padding: s(24),
     alignItems: "center",
-    paddingVertical: vs(16),
-    borderRadius: s(50),
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  imageWrap: {
+    width: s(180),
+    height: s(180),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  img: {
+    width: "100%",
+    height: "100%",
+  },
+
+  checkCircle: {
     position: "absolute",
-    bottom: 0,
+    width: s(70),
+    height: s(70),
+    borderRadius: s(35),
+    backgroundColor: "#16A34A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  title: {
+    marginTop: vs(20),
+    fontSize: ms(28),
+    fontWeight: "900",
+    color: "#0F172A",
+    textAlign: "center",
+  },
+
+  subtitle: {
+    marginTop: vs(10),
+    fontSize: ms(15),
+    color: "#64748B",
+    textAlign: "center",
+  },
+
+  redirectText: {
+    marginTop: vs(18),
+    fontSize: ms(14),
+    color: "#2563EB",
+    fontWeight: "700",
+  },
+
+  button: {
+    backgroundColor: "#2563EB",
+    borderRadius: s(18),
+    paddingVertical: vs(16),
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontSize: ms(16),
+    fontWeight: "800",
+    marginRight: s(8),
   },
 });
