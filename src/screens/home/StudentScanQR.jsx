@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Vibration,
 } from "react-native";
 import {
   SafeAreaView,
@@ -41,21 +40,6 @@ const StudentScanQR = () => {
 
   const [success, setSuccess] =
     useState(null);
-
-  /* ---------------------- */
-  /* Vibration Functions */
-  /* ---------------------- */
-
-  const playFeedback = (type) => {
-    // Vibration feedback:
-    // - Success: short 100ms vibration
-    // - Error: long vibration pattern [pause, vibrate, pause, vibrate]
-    if (type === "success") {
-      Vibration.vibrate(100);
-    } else {
-      Vibration.vibrate([0, 200, 100, 200]);
-    }
-  };
 
   useEffect(() => {
     if (
@@ -97,7 +81,6 @@ const StudentScanQR = () => {
         if (
           res.success
         ) {
-          playFeedback("success");
           setSuccess({
             title:
               "Attendance Marked",
@@ -105,7 +88,6 @@ const StudentScanQR = () => {
               res.message,
           });
         } else {
-          playFeedback("error");
           setSuccess({
             title:
               "Failed",
