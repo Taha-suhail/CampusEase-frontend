@@ -12,9 +12,12 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { s, vs, ms } from "react-native-size-matters";
 
 import { GET_USER } from "../../services/AuthServices";
+import { GET_MY_STUDENT_DETAILS } from "../../services/StudentService";
 
 const StudentProfile = () => {
   const [user, setUser] = useState(null);
+
+  const [studentDetails, setStudentDetails] = useState(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -32,10 +35,17 @@ const StudentProfile = () => {
         setLoading(true);
       }
 
-      const res = await GET_USER();
+      const [userRes, studentRes] = await Promise.all([
+        GET_USER(),
+        GET_MY_STUDENT_DETAILS(),
+      ]);
 
-      if (res.success) {
-        setUser(res.data);
+      if (userRes.success) {
+        setUser(userRes.data);
+      }
+
+      if (studentRes.success) {
+        setStudentDetails(studentRes.data);
       }
     } catch (error) {
     } finally {
@@ -52,9 +62,15 @@ const StudentProfile = () => {
     fetchUser(true);
   }, []);
 
-  const name = user?.name || user?.fullName || "Student";
+  const name = user?.fullName || "Student";
 
   const firstLetter = name?.charAt(0)?.toUpperCase() || "S";
+
+  const semester = studentDetails?.semester || "-";
+  const year = studentDetails?.year || "-";
+  const department = studentDetails?.department || "-";
+  const branch = studentDetails?.branch || "-";
+  const rollNumber = studentDetails?.rollNumber || "-";
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -108,13 +124,13 @@ const StudentProfile = () => {
               <StatCard
                 icon="calendar-outline"
                 title="Semester"
-                value={user?.semester || "-"}
+                value={semester}
               />
 
               <StatCard
                 icon="layers-outline"
                 title="Year"
-                value={user?.year || "-"}
+                value={year}
               />
             </View>
 
@@ -125,31 +141,31 @@ const StudentProfile = () => {
               <ProfileRow
                 icon="business-outline"
                 label="Department"
-                value={user?.department || "-"}
+                value={department}
               />
 
               <ProfileRow
                 icon="git-branch-outline"
                 label="Branch"
-                value={user?.branch || "-"}
+                value={branch}
               />
 
               <ProfileRow
                 icon="school-outline"
                 label="Semester"
-                value={user?.semester || "-"}
+                value={semester}
               />
 
               <ProfileRow
                 icon="card-outline"
                 label="Roll Number"
-                value={user?.rollNo || user?.rollNumber || "-"}
+                value={rollNumber}
               />
 
               <ProfileRow
                 icon="layers-outline"
                 label="Year"
-                value={user?.year || "-"}
+                value={year}
               />
 
               <ProfileRow

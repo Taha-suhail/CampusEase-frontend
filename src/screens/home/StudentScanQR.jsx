@@ -23,11 +23,7 @@ import {
   CameraView,
   useCameraPermissions,
 } from "expo-camera";
-
-/**
- * Replace API:
- * MARK_ATTENDANCE(payload)
- */
+import { MARK_ATTENDANCE } from "../../services/StudentService";
 
 const StudentScanQR = () => {
   const [
@@ -80,18 +76,7 @@ const StudentScanQR = () => {
             data
           );
 
-        /**
-         * Replace API:
-         *
-         * const res =
-         * await MARK_ATTENDANCE(parsed);
-         */
-
-        const res = {
-          success: true,
-          message:
-            "Attendance Marked Successfully",
-        };
+        const res = await MARK_ATTENDANCE(parsed.token, parsed.subjectId);
 
         if (
           res.success

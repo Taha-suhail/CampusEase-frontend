@@ -13,13 +13,11 @@ import { s, vs, ms } from "react-native-size-matters";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import QRCode from "react-native-qrcode-svg";
 import { Picker } from "@react-native-picker/picker";
-
-/**
- * Replace APIs:
- * GET_TEACHER_SUBJECTS()
- * CREATE_ATTENDANCE_SESSION()
- * TERMINATE_SESSION()
- */
+import {
+  GET_ASSIGNED_SUBJECTS,
+  CREATE_ATTENDANCE_SESSION,
+  TERMINATE_SESSION,
+} from "../../services/TeacherServices";
 
 const TeacherGenerateQR = () => {
   const [subjects, setSubjects] = useState([]);
@@ -44,25 +42,12 @@ const TeacherGenerateQR = () => {
     try {
       setLoading(true);
 
-      // Replace with API
-      const res = {
-        success: true,
-        data: [
-          {
-            _id: "1",
-            name: "Operating System",
-            code: "BCS544",
-          },
-          {
-            _id: "2",
-            name: "Big Data",
-            code: "BCS333",
-          },
-        ],
-      };
+      const res = await GET_ASSIGNED_SUBJECTS();
 
       if (res.success) {
         setSubjects(res.data);
+      } else {
+        Alert.alert("Error", res.message || "Failed to load subjects");
       }
     } catch (error) {
       Alert.alert("Error", "Failed to load subjects");
@@ -110,23 +95,28 @@ const TeacherGenerateQR = () => {
 
       const selected = subjects.find((s) => s._id === subjectId);
 
-      const token = "SESSION_" + Date.now();
+      const res = await CREATE_ATTENDANCE_SESSION(subjectId, duration);
 
-      const payload = JSON.stringify({
-        token,
-        subjectId,
-        duration,
-        createdAt: new Date(),
-      });
+      if (res.success && res.data) {
+        const payload = JSON.stringify({
+          token: res.data.sessionCode,
+          subjectId,
+          duration,
+          createdAt: new Date(),
+        });
 
-      setSession({
-        token,
-        payload,
-        subject: selected,
-        startedAt: new Date(),
-      });
+        setSession({
+          token: res.data.sessionCode,
+          sessionId: res.data._id,
+          payload,
+          subject: selected,
+          startedAt: new Date(),
+        });
 
-      setSecondsLeft(duration * 60);
+        setSecondsLeft(duration * 60);
+      } else {
+        Alert.alert("Error", res.message || "Could not create session");
+      }
     } catch (error) {
       Alert.alert("Error", "Could not create session");
     } finally {
@@ -140,7 +130,9 @@ const TeacherGenerateQR = () => {
 
   const handleTerminate = async (auto = false) => {
     try {
-      // await TERMINATE_SESSION(session.token)
+      if (session?.sessionId) {
+        await TERMINATE_SESSION(session.sessionId);
+      }
 
       setSession(null);
       setSecondsLeft(0);

@@ -18,3 +18,69 @@ export const ENROLL_SUBJECT = async (subjectId) => {
     body: JSON.stringify({ subjectId }),
   });
 };
+
+// ✅ Mark Attendance via QR Code
+export const MARK_ATTENDANCE = async (sessionCode, subjectId) => {
+  try {
+    const data = await apiRequest(`${Student_API_URL}mark-attendance`, {
+      method: "POST",
+      body: JSON.stringify({
+        sessionCode,
+        subjectId,
+      }),
+    });
+
+    return {
+      success: data.success || false,
+      message: data.message || "Attendance marked successfully",
+      data: data.data || null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to mark attendance",
+    };
+  }
+};
+
+// ✅ Get Own Attendance Records
+export const GET_ATTENDANCE_RECORDS = async () => {
+  try {
+    const data = await apiRequest(`${Student_API_URL}my-attendance`, {
+      method: "GET",
+    });
+
+    return {
+      success: true,
+      data: data.data || [],
+      message: "Attendance records fetched successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to fetch attendance records",
+      data: [],
+    };
+  }
+};
+
+// ✅ Get My Student Details
+export const GET_MY_STUDENT_DETAILS = async () => {
+  try {
+    const data = await apiRequest(`${Student_API_URL}me`, {
+      method: "GET",
+    });
+
+    return {
+      success: true,
+      data: data.data || null,
+      message: "Student details fetched successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to fetch student details",
+      data: null,
+    };
+  }
+};

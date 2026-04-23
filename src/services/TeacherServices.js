@@ -46,3 +46,80 @@ export const GET_TEACHER_DASHBOARD = async () => {
     };
   }
 };
+
+/**
+ * Create an attendance session
+ * @param {string} subjectId - The subject ID
+ * @param {number} durationMinutes - Session duration in minutes
+ */
+export const CREATE_ATTENDANCE_SESSION = async (subjectId, durationMinutes) => {
+  try {
+    const data = await apiRequest(`${TEACHER_API_URL}/create-session`, {
+      method: "POST",
+      body: JSON.stringify({
+        subjectId,
+        durationMinutes,
+      }),
+    });
+
+    return {
+      success: true,
+      data: data.data || null,
+      message: "Attendance session created successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to create attendance session",
+    };
+  }
+};
+
+/**
+ * Terminate an attendance session
+ * @param {string} sessionId - The session ID to terminate
+ */
+export const TERMINATE_SESSION = async (sessionId) => {
+  try {
+    const data = await apiRequest(`${TEACHER_API_URL}/terminate-session`, {
+      method: "POST",
+      body: JSON.stringify({
+        sessionId,
+      }),
+    });
+
+    return {
+      success: true,
+      data: data.data || null,
+      message: "Session terminated successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to terminate session",
+    };
+  }
+};
+
+/**
+ * Get my teacher profile details
+ */
+export const GET_MY_TEACHER_DETAILS = async () => {
+  try {
+    const data = await apiRequest(`${TEACHER_API_URL}/me`, {
+      method: "GET",
+    });
+
+    return {
+      success: true,
+      data: data.data || null,
+      message: "Teacher details fetched successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to fetch teacher details",
+      data: null,
+    };
+  }
+};
