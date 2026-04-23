@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -14,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { s, vs, ms } from "react-native-size-matters";
 
-import { GET_TEACHERS } from "../../services/AdminServices";
+import { GET_TEACHERS, DELETE_TEACHER } from "../../services/AdminServices";
 
 const TeachersList = ({ navigation }) => {
   const [teachers, setTeachers] = useState([]);
@@ -26,6 +27,8 @@ const TeachersList = ({ navigation }) => {
   const [search, setSearch] = useState("");
 
   const [departmentFilter, setDepartmentFilter] = useState("");
+
+  const [deletingId, setDeletingId] = useState(null);
 
   const loadTeachers = async (isRefresh = false) => {
     try {
@@ -44,6 +47,35 @@ const TeachersList = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const handleDelete = async (teacherId) => {
+    Alert.alert(
+      "Delete Teacher",
+      "Are you sure you want to delete this teacher?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeletingId(teacherId);
+            const res = await DELETE_TEACHER(teacherId);
+            setDeletingId(null);
+            if (res.success) {
+              Alert.alert("Success", "Teacher deleted successfully");
+              loadTeachers();
+            } else {
+              Alert.alert("Error", res.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEdit = (item) => {
+    navigation.navigate("EditTeacher", { teacher: item });
   };
 
   useEffect(() => {
@@ -76,47 +108,74 @@ const TeachersList = ({ navigation }) => {
   }, [teachers, search, departmentFilter]);
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.9}
-      onPress={() =>
-        navigation.navigate("TeacherDetail", {
-          teacherId: item._id,
-        })
-      }
-    >
-      <View style={styles.topRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {item.teacher?.fullName?.charAt(0).toUpperCase()}
-          </Text>
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.cardContent}
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate("TeacherDetail", {
+            teacherId: item._id,
+          })
+        }
+      >
+        <View style={styles.topRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {item.teacher?.fullName?.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: s(12),
+            }}
+          >
+            <Text style={styles.name}>{item.teacher?.fullName || "Teacher"}</Text>
+
+            <Text style={styles.email}>{item.teacher?.email || "-"}</Text>
+          </View>
+
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
         </View>
 
-        <View
-          style={{
-            flex: 1,
-            marginLeft: s(12),
-          }}
+        <View style={styles.badgeRow}>
+          <Badge text={item.department} color="#14B8A6" />
+
+          <Badge
+            text={item.employeeId ? `ID ${item.employeeId}` : "No ID"}
+            color="#2563EB"
+          />
+
+          <Badge text={item.designation || "Teacher"} color="#8B5CF6" />
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleEdit(item)}
         >
-          <Text style={styles.name}>{item.teacher?.fullName || "Teacher"}</Text>
+          <Ionicons name="create-outline" size={18} color="#2563EB" />
+          <Text style={styles.actionText}>Edit</Text>
+        </TouchableOpacity>
 
-          <Text style={styles.email}>{item.teacher?.email || "-"}</Text>
-        </View>
-
-        <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.deleteBtn]}
+          onPress={() => handleDelete(item._id)}
+          disabled={deletingId === item._id}
+        >
+          {deletingId === item._id ? (
+            <ActivityIndicator size="small" color="#DC2626" />
+          ) : (
+            <>
+              <Ionicons name="trash-outline" size={18} color="#DC2626" />
+              <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.badgeRow}>
-        <Badge text={item.department} color="#14B8A6" />
-
-        <Badge
-          text={item.employeeId ? `ID ${item.employeeId}` : "No ID"}
-          color="#2563EB"
-        />
-
-        <Badge text={item.designation || "Teacher"} color="#8B5CF6" />
-      </View>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -392,5 +451,43 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#94A3B8",
     fontSize: ms(14),
+  },
+
+  cardContent: {
+    flex: 1,
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    marginTop: vs(12),
+    paddingTop: vs(12),
+  },
+
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: vs(8),
+    marginHorizontal: s(4),
+    borderRadius: s(10),
+    backgroundColor: "#EFF6FF",
+  },
+
+  deleteBtn: {
+    backgroundColor: "#FEF2F2",
+  },
+
+  actionText: {
+    marginLeft: s(6),
+    fontSize: ms(13),
+    fontWeight: "800",
+    color: "#2563EB",
+  },
+
+  deleteText: {
+    color: "#DC2626",
   },
 });

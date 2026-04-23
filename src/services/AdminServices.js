@@ -362,3 +362,153 @@ export const ASSIGN_SUBJECT_TO_TEACHER = async (assignmentData) => {
     };
   }
 };
+
+/**
+ * Delete a student
+ * @param {string} studentId - Student ID
+ * @returns {Object} - Response object with success status
+ */
+export const DELETE_STUDENT = async (studentId) => {
+  try {
+    const data = await apiRequest(`${ADMIN_API_URL}/students/${studentId}`, {
+      method: "DELETE",
+    });
+
+    return {
+      success: true,
+      data,
+      message: data.message || "Student deleted successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to delete student",
+    };
+  }
+};
+
+/**
+ * Update a student
+ * @param {string} studentId - Student ID
+ * @param {Object} studentData - Updated student data
+ * @returns {Object} - Response object with success status
+ */
+export const UPDATE_STUDENT = async (studentId, studentData) => {
+  try {
+    const data = await apiRequest(`${ADMIN_API_URL}/students/${studentId}`, {
+      method: "PUT",
+      body: JSON.stringify(studentData),
+    });
+
+    return {
+      success: true,
+      data,
+      message: data.message || "Student updated successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to update student",
+    };
+  }
+};
+
+/**
+ * Delete a teacher
+ * @param {string} teacherId - Teacher ID
+ * @returns {Object} - Response object with success status
+ */
+export const DELETE_TEACHER = async (teacherId) => {
+  try {
+    const data = await apiRequest(`${ADMIN_API_URL}/teachers/${teacherId}`, {
+      method: "DELETE",
+    });
+
+    return {
+      success: true,
+      data,
+      message: data.message || "Teacher deleted successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to delete teacher",
+    };
+  }
+};
+
+/**
+ * Update a teacher
+ * @param {string} teacherId - Teacher ID
+ * @param {Object} teacherData - Updated teacher data
+ * @returns {Object} - Response object with success status
+ */
+export const UPDATE_TEACHER = async (teacherId, teacherData) => {
+  try {
+    const data = await apiRequest(`${ADMIN_API_URL}/teachers/${teacherId}`, {
+      method: "PUT",
+      body: JSON.stringify(teacherData),
+    });
+
+    return {
+      success: true,
+      data,
+      message: data.message || "Teacher updated successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to update teacher",
+    };
+  }
+};
+
+/**
+ * Delete a subject
+ * @param {string} subjectId - Subject ID
+ * @returns {Object} - Response object with success status
+ */
+export const DELETE_SUBJECT = async (subjectId) => {
+  try {
+    const data = await apiRequest(`${ADMIN_API_URL}/subjects/${subjectId}`, {
+      method: "DELETE",
+    });
+
+    return {
+      success: true,
+      data,
+      message: data.message || "Subject deleted successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to delete subject",
+    };
+  }
+};
+
+/**
+ * Update a subject
+ * @param {string} subjectId - Subject ID
+ * @param {Object} subjectData - Updated subject data
+ * @returns {Object} - Response object with success status
+ */
+export const UPDATE_SUBJECT = async (subjectId, subjectData) => {
+  try {
+    const data = await apiRequest(`${ADMIN_API_URL}/subjects/${subjectId}`, {
+      method: "PUT",
+      body: JSON.stringify(subjectData),
+    });
+
+    return {
+      success: true,
+      data,
+      message: data.message || "Subject updated successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to update subject",
+    };
+  }
+};
