@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -14,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { s, vs, ms } from "react-native-size-matters";
 
-import { GET_STUDENTS } from "../../services/AdminServices";
+import { GET_STUDENTS, DELETE_STUDENT } from "../../services/AdminServices";
 
 const StudentsList = ({ navigation }) => {
   const [students, setStudents] = useState([]);
@@ -24,6 +25,8 @@ const StudentsList = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const [search, setSearch] = useState("");
+
+  const [deletingId, setDeletingId] = useState(null);
 
   const [departmentFilter, setDepartmentFilter] = useState("");
 
@@ -57,6 +60,35 @@ const StudentsList = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const handleDelete = async (studentId) => {
+    Alert.alert(
+      "Delete Student",
+      "Are you sure you want to delete this student?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeletingId(studentId);
+            const res = await DELETE_STUDENT(studentId);
+            setDeletingId(null);
+            if (res.success) {
+              Alert.alert("Success", "Student deleted successfully");
+              loadStudents();
+            } else {
+              Alert.alert("Error", res.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEdit = (item) => {
+    navigation.navigate("EditStudent", { student: item });
   };
 
   useEffect(() => {
@@ -96,44 +128,71 @@ const StudentsList = ({ navigation }) => {
   }, [students, search, departmentFilter, semesterFilter]);
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.9}
-      onPress={() =>
-        navigation.navigate("StudentDetail", {
-          studentId: item.id,
-        })
-      }
-    >
-      <View style={styles.topRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {item.name?.charAt(0).toUpperCase()}
-          </Text>
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.cardContent}
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate("StudentDetail", {
+            studentId: item.id,
+          })
+        }
+      >
+        <View style={styles.topRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {item.name?.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: s(12),
+            }}
+          >
+            <Text style={styles.name}>{item.name}</Text>
+
+            <Text style={styles.email}>{item.email}</Text>
+          </View>
+
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
         </View>
 
-        <View
-          style={{
-            flex: 1,
-            marginLeft: s(12),
-          }}
+        <View style={styles.badgeRow}>
+          <Badge text={`Sem ${item.semester}`} color="#8B5CF6" />
+
+          <Badge text={item.department} color="#14B8A6" />
+
+          <Badge text={`Roll ${item.rollNo}`} color="#2563EB" />
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleEdit(item)}
         >
-          <Text style={styles.name}>{item.name}</Text>
+          <Ionicons name="create-outline" size={18} color="#2563EB" />
+          <Text style={styles.actionText}>Edit</Text>
+        </TouchableOpacity>
 
-          <Text style={styles.email}>{item.email}</Text>
-        </View>
-
-        <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.deleteBtn]}
+          onPress={() => handleDelete(item.id)}
+          disabled={deletingId === item.id}
+        >
+          {deletingId === item.id ? (
+            <ActivityIndicator size="small" color="#DC2626" />
+          ) : (
+            <>
+              <Ionicons name="trash-outline" size={18} color="#DC2626" />
+              <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.badgeRow}>
-        <Badge text={`Sem ${item.semester}`} color="#8B5CF6" />
-
-        <Badge text={item.department} color="#14B8A6" />
-
-        <Badge text={`Roll ${item.rollNo}`} color="#2563EB" />
-      </View>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -428,5 +487,43 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#94A3B8",
     fontSize: ms(14),
+  },
+
+  cardContent: {
+    flex: 1,
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    marginTop: vs(12),
+    paddingTop: vs(12),
+  },
+
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: vs(8),
+    marginHorizontal: s(4),
+    borderRadius: s(10),
+    backgroundColor: "#EFF6FF",
+  },
+
+  deleteBtn: {
+    backgroundColor: "#FEF2F2",
+  },
+
+  actionText: {
+    marginLeft: s(6),
+    fontSize: ms(13),
+    fontWeight: "800",
+    color: "#2563EB",
+  },
+
+  deleteText: {
+    color: "#DC2626",
   },
 });

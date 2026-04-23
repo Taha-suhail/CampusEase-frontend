@@ -220,17 +220,32 @@ const AdminDashboard = ({
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={
-              styles.notifyBtn
-            }
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={22}
-              color="#0F172A"
-            />
-          </TouchableOpacity>
+          <View style={styles.headerBtns}>
+            <TouchableOpacity
+              style={
+                styles.notifyBtn
+              }
+              onPress={() => navigation.navigate("AdminProfile")}
+            >
+              <Ionicons
+                name="person-outline"
+                size={22}
+                color="#0F172A"
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={
+                styles.notifyBtn
+              }
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color="#0F172A"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* HERO CARD */}
@@ -559,6 +574,11 @@ const styles =
         "center",
       alignItems:
         "center",
+    },
+
+    headerBtns: {
+      flexDirection: "row",
+      alignItems: "center",
     },
 
     heroCard: {

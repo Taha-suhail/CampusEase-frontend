@@ -12,9 +12,12 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { s, vs, ms } from "react-native-size-matters";
 
 import { GET_USER } from "../../services/AuthServices";
+import { GET_MY_TEACHER_DETAILS } from "../../services/TeacherServices";
 
 const TeacherProfile = () => {
   const [user, setUser] = useState(null);
+
+  const [teacherDetails, setTeacherDetails] = useState(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -28,10 +31,17 @@ const TeacherProfile = () => {
         setLoading(true);
       }
 
-      const res = await GET_USER();
+      const [userRes, teacherRes] = await Promise.all([
+        GET_USER(),
+        GET_MY_TEACHER_DETAILS(),
+      ]);
 
-      if (res.success) {
-        setUser(res.data);
+      if (userRes.success) {
+        setUser(userRes.data);
+      }
+
+      if (teacherRes.success) {
+        setTeacherDetails(teacherRes.data);
       }
     } catch (error) {
     } finally {
@@ -53,6 +63,11 @@ const TeacherProfile = () => {
   const email = user?.email || "-";
 
   const firstLetter = name?.charAt(0)?.toUpperCase() || "T";
+
+  const department = teacherDetails?.department || "-";
+  const designation = teacherDetails?.designation || "Teacher";
+  const employeeId = teacherDetails?.employeeId || "-";
+  const subjectsCount = teacherDetails?.subjects?.length || 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -107,7 +122,7 @@ const TeacherProfile = () => {
               <StatCard
                 icon="book-outline"
                 title="Subjects"
-                value={user?.subjects?.length || 0}
+                value={subjectsCount}
               />
 
               <StatCard icon="people-outline" title="Role" value="Teacher" />
@@ -128,19 +143,19 @@ const TeacherProfile = () => {
               <ProfileRow
                 icon="business-outline"
                 label="Department"
-                value={user?.department || "-"}
+                value={department}
               />
 
               <ProfileRow
                 icon="ribbon-outline"
                 label="Designation"
-                value={user?.designation || "Teacher"}
+                value={designation}
               />
 
               <ProfileRow
                 icon="card-outline"
                 label="Employee ID"
-                value={user?.employeeId || user?.employee_number || "-"}
+                value={employeeId}
               />
             </View>
           </>

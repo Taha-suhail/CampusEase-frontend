@@ -116,6 +116,19 @@ export const GET_USER = async () => {
   return await parseResponse(response, "Unable to get user.");
 };
 
+export const GET_STUDENT_PROFILE = async () => {
+  const token = await AsyncStorage.getItem("accessToken");
+  if (!token) throw new Error("Access token is required");
+  const response = await fetch(`${BASE_URL}/api/v1/users/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await parseResponse(response, "Unable to get student profile.");
+};
+
 export const LOGOUT = async () => {
   try {
     await AsyncStorage.removeItem("accessToken");

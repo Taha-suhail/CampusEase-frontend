@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Vibration,
 } from "react-native";
 import {
   SafeAreaView,
@@ -23,11 +24,7 @@ import {
   CameraView,
   useCameraPermissions,
 } from "expo-camera";
-
-/**
- * Replace API:
- * MARK_ATTENDANCE(payload)
- */
+import { MARK_ATTENDANCE } from "../../services/StudentService";
 
 const StudentScanQR = () => {
   const [
@@ -44,6 +41,21 @@ const StudentScanQR = () => {
 
   const [success, setSuccess] =
     useState(null);
+
+  /* ---------------------- */
+  /* Vibration Functions */
+  /* ---------------------- */
+
+  const playFeedback = (type) => {
+    // Vibration feedback:
+    // - Success: short 100ms vibration
+    // - Error: long vibration pattern [pause, vibrate, pause, vibrate]
+    if (type === "success") {
+      Vibration.vibrate(100);
+    } else {
+      Vibration.vibrate([0, 200, 100, 200]);
+    }
+  };
 
   useEffect(() => {
     if (
@@ -80,22 +92,12 @@ const StudentScanQR = () => {
             data
           );
 
-        /**
-         * Replace API:
-         *
-         * const res =
-         * await MARK_ATTENDANCE(parsed);
-         */
-
-        const res = {
-          success: true,
-          message:
-            "Attendance Marked Successfully",
-        };
+        const res = await MARK_ATTENDANCE(parsed.token, parsed.subjectId);
 
         if (
           res.success
         ) {
+          playFeedback("success");
           setSuccess({
             title:
               "Attendance Marked",
@@ -103,6 +105,7 @@ const StudentScanQR = () => {
               res.message,
           });
         } else {
+          playFeedback("error");
           setSuccess({
             title:
               "Failed",

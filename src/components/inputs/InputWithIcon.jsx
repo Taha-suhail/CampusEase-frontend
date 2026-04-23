@@ -11,9 +11,9 @@ const InputWithIcon = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Feather name="mail" size={24} color="#64748B" />
+      {/* <Feather name="mail" size={24} color="#64748B" /> */}
       <TextInput
-        style={{ fontSize: s(18) }}
+        style={{ fontSize: s(16) }}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

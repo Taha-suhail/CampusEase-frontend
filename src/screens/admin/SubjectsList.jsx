@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -14,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { s, vs, ms } from "react-native-size-matters";
 
-import { GET_SUBJECTS } from "../../services/AdminServices";
+import { GET_SUBJECTS, DELETE_SUBJECT } from "../../services/AdminServices";
 
 const SubjectsList = ({ navigation }) => {
   const [subjects, setSubjects] = useState([]);
@@ -24,6 +25,8 @@ const SubjectsList = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const [search, setSearch] = useState("");
+
+  const [deletingId, setDeletingId] = useState(null);
 
   const loadSubjects = async (isRefresh = false) => {
     try {
@@ -42,6 +45,35 @@ const SubjectsList = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const handleDelete = async (subjectId) => {
+    Alert.alert(
+      "Delete Subject",
+      "Are you sure you want to delete this subject?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeletingId(subjectId);
+            const res = await DELETE_SUBJECT(subjectId);
+            setDeletingId(null);
+            if (res.success) {
+              Alert.alert("Success", "Subject deleted successfully");
+              loadSubjects();
+            } else {
+              Alert.alert("Error", res.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEdit = (item) => {
+    navigation.navigate("EditSubject", { subject: item });
   };
 
   useEffect(() => {
@@ -68,51 +100,78 @@ const SubjectsList = ({ navigation }) => {
   }, [subjects, search]);
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={styles.card}
-      onPress={() =>
-        navigation.navigate("AssignSubjectToTeacher", {
-          subjectId: item._id,
-        })
-      }
-    >
-      <View style={styles.topRow}>
-        <View style={styles.subjectIcon}>
-          <Ionicons name="book-outline" size={20} color="#2563EB" />
+    <View style={styles.card}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={styles.cardContent}
+        onPress={() =>
+          navigation.navigate("AssignSubjectToTeacher", {
+            subjectId: item._id,
+          })
+        }
+      >
+        <View style={styles.topRow}>
+          <View style={styles.subjectIcon}>
+            <Ionicons name="book-outline" size={20} color="#2563EB" />
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: s(12),
+            }}
+          >
+            <Text style={styles.subjectName}>{item.name}</Text>
+
+            <Text style={styles.subjectCode}>{item.code}</Text>
+          </View>
+
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
         </View>
 
-        <View
-          style={{
-            flex: 1,
-            marginLeft: s(12),
-          }}
+        <View style={styles.metaWrap}>
+          <Badge text={item.department || "N/A"} color="#14B8A6" />
+
+          <Badge text={`Sem ${item.semester || "-"}`} color="#8B5CF6" />
+
+          <Badge
+            text={item.teacher ? "Assigned" : "Pending"}
+            color={item.teacher ? "#16A34A" : "#F59E0B"}
+          />
+        </View>
+
+        <Text style={styles.teacherText}>
+          {item.teacher?.fullName
+            ? `Faculty: ${item.teacher.fullName}`
+            : "No teacher assigned"}
+        </Text>
+      </TouchableOpacity>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleEdit(item)}
         >
-          <Text style={styles.subjectName}>{item.name}</Text>
+          <Ionicons name="create-outline" size={18} color="#2563EB" />
+          <Text style={styles.actionText}>Edit</Text>
+        </TouchableOpacity>
 
-          <Text style={styles.subjectCode}>{item.code}</Text>
-        </View>
-
-        <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.deleteBtn]}
+          onPress={() => handleDelete(item._id)}
+          disabled={deletingId === item._id}
+        >
+          {deletingId === item._id ? (
+            <ActivityIndicator size="small" color="#DC2626" />
+          ) : (
+            <>
+              <Ionicons name="trash-outline" size={18} color="#DC2626" />
+              <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.metaWrap}>
-        <Badge text={item.department || "N/A"} color="#14B8A6" />
-
-        <Badge text={`Sem ${item.semester || "-"}`} color="#8B5CF6" />
-
-        <Badge
-          text={item.teacher ? "Assigned" : "Pending"}
-          color={item.teacher ? "#16A34A" : "#F59E0B"}
-        />
-      </View>
-
-      <Text style={styles.teacherText}>
-        {item.teacher?.fullName
-          ? `Faculty: ${item.teacher.fullName}`
-          : "No teacher assigned"}
-      </Text>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -386,5 +445,43 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#94A3B8",
     fontSize: ms(14),
+  },
+
+  cardContent: {
+    flex: 1,
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    marginTop: vs(12),
+    paddingTop: vs(12),
+  },
+
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: vs(8),
+    marginHorizontal: s(4),
+    borderRadius: s(10),
+    backgroundColor: "#EFF6FF",
+  },
+
+  deleteBtn: {
+    backgroundColor: "#FEF2F2",
+  },
+
+  actionText: {
+    marginLeft: s(6),
+    fontSize: ms(13),
+    fontWeight: "800",
+    color: "#2563EB",
+  },
+
+  deleteText: {
+    color: "#DC2626",
   },
 });

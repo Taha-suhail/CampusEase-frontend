@@ -13,11 +13,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { Picker } from "@react-native-picker/picker";
 import { s, vs, ms } from "react-native-size-matters";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-
-/**
- * Replace with API:
- * GET_ATTENDANCE_RECORDS(filters)
- */
+import { GET_ATTENDANCE_RECORDS } from "../../services/StudentService";
 
 const StudentAttendance = () => {
   const [loading, setLoading] = useState(true);
@@ -26,6 +22,8 @@ const StudentAttendance = () => {
 
   const [records, setRecords] = useState([]);
 
+  const [subjects, setSubjects] = useState([]);
+
   const [subject, setSubject] = useState("all");
 
   const [month, setMonth] = useState("all");
@@ -33,6 +31,34 @@ const StudentAttendance = () => {
   const [selectedDate, setSelectedDate] = useState("");
 
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  /* ------------------- */
+  /* Extract Unique Data */
+  /* ------------------- */
+
+  const extractFilters = (data) => {
+    const uniqueSubjects = [];
+    const uniqueMonths = new Set();
+
+    data.forEach((item) => {
+      if (item.code && !uniqueSubjects.find((s) => s.code === item.code)) {
+        uniqueSubjects.push({ code: item.code, name: item.subject });
+      }
+      if (item.date) {
+        const monthPart = item.date.split("-")[1];
+        if (monthPart) uniqueMonths.add(monthPart);
+      }
+    });
+
+    return { uniqueSubjects, uniqueMonths: Array.from(uniqueMonths).sort() };
+  };
+
+  useEffect(() => {
+    if (records.length > 0) {
+      const { uniqueSubjects, uniqueMonths } = extractFilters(records);
+      setSubjects(uniqueSubjects);
+    }
+  }, [records]);
 
   /* ------------------- */
   /* Helpers */
@@ -54,32 +80,7 @@ const StudentAttendance = () => {
         setLoading(true);
       }
 
-      const res = {
-        success: true,
-        data: [
-          {
-            _id: "1",
-            subject: "Operating System",
-            code: "BCS544",
-            date: "2026-04-22",
-            status: "Present",
-          },
-          {
-            _id: "2",
-            subject: "Big Data",
-            code: "BCS333",
-            date: "2026-04-21",
-            status: "Absent",
-          },
-          {
-            _id: "3",
-            subject: "TOA",
-            code: "BCS102",
-            date: "2026-03-18",
-            status: "Present",
-          },
-        ],
-      };
+      const res = await GET_ATTENDANCE_RECORDS();
 
       if (res.success) {
         setRecords(res.data);
@@ -164,9 +165,13 @@ const StudentAttendance = () => {
           <View style={styles.pickerWrap}>
             <Picker selectedValue={subject} onValueChange={setSubject}>
               <Picker.Item label="All Subjects" value="all" />
-              <Picker.Item label="Operating System" value="BCS544" />
-              <Picker.Item label="Big Data" value="BCS333" />
-              <Picker.Item label="TOA" value="BCS102" />
+              {subjects.map((item) => (
+                <Picker.Item
+                  key={item.code}
+                  label={`${item.name} (${item.code})`}
+                  value={item.code}
+                />
+              ))}
             </Picker>
           </View>
 
@@ -181,8 +186,18 @@ const StudentAttendance = () => {
           >
             <Picker selectedValue={month} onValueChange={setMonth}>
               <Picker.Item label="All Months" value="all" />
+              <Picker.Item label="January" value="01" />
+              <Picker.Item label="February" value="02" />
               <Picker.Item label="March" value="03" />
               <Picker.Item label="April" value="04" />
+              <Picker.Item label="May" value="05" />
+              <Picker.Item label="June" value="06" />
+              <Picker.Item label="July" value="07" />
+              <Picker.Item label="August" value="08" />
+              <Picker.Item label="September" value="09" />
+              <Picker.Item label="October" value="10" />
+              <Picker.Item label="November" value="11" />
+              <Picker.Item label="December" value="12" />
             </Picker>
           </View>
 
