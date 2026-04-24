@@ -138,7 +138,7 @@ export const BULK_ADD_USERS = async (csvUri) => {
     });
 
     const data = await apiRequest(
-      `http://192.168.29.74:3000/api/v1/admin/allowed-users/bulk`,
+      `${ADMIN_API_URL}/allowed-users/bulk`,
       {
         method: "POST",
         body: formData,
